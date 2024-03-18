@@ -1,20 +1,38 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const Grid = ({ onWeightChange }) => {
   const initialSize = 5;
-  const [weights, setWeights] = useState(Array(initialSize * initialSize).fill(0));
+  const initialWeights = Array(initialSize * initialSize).fill(0);
+  const [weights, setWeights] = useState(initialWeights);
   const [size, setSize] = useState(initialSize);
+  const [cellSize, setCellSize] = useState(0);
+  const [matrix, setMatrix] = useState(generateMatrix(initialWeights, initialSize));
+
+  useEffect(() => {
+    function calculateCellSize() {
+      const windowWidth = window.innerWidth;
+      const resolution = 0.4; // Porcentagem da resolução desejada
+      const calculatedCellSize = Math.min(windowWidth * resolution / size, 100);
+      setCellSize(calculatedCellSize);
+    }
+
+    calculateCellSize();
+    window.addEventListener('resize', calculateCellSize);
+
+    return () => window.removeEventListener('resize', calculateCellSize);
+  }, [size]);
+
+  useEffect(() => {
+    setMatrix(generateMatrix(weights, size));
+  }, [weights, size]);
 
   const handleSquareClick = (row, col) => {
     const index = (row - 1) * size + (col - 1);
     const newWeights = [...weights];
     const currentWeight = newWeights[index];
-
     newWeights[index] = currentWeight < 5 ? currentWeight + 1 : 1;
-
     setWeights(newWeights);
-
     if (typeof onWeightChange === 'function') {
       onWeightChange(`(${row}, ${col})`, newWeights[index]);
     }
@@ -27,30 +45,36 @@ const Grid = ({ onWeightChange }) => {
   };
 
   const handleSaveChanges = () => {
-    // Construir a representação da matriz com base nos pesos das células
-    const matrix = [];
+    console.log("Matriz de pesos:", matrix);
+  };
+
+  function generateMatrix(weights, size) {
+    const newMatrix = [];
     for (let row = 0; row < size; row++) {
       const rowData = [];
       for (let col = 0; col < size; col++) {
         const index = row * size + col;
-        rowData.push(weights[index]);
+        rowData.push(weights ? (weights[index] || 0) : 0);
       }
-      matrix.push(rowData);
+      newMatrix.push(rowData);
     }
-    console.log("Matriz de pesos:", matrix);
-  };
+    return newMatrix;
+  }
 
   const gridSquares = [];
+  const squareStyle = {
+    width: `${cellSize}px`,
+    height: `${cellSize}px`,
+    fontSize: `${cellSize / 3}px`
+  };
   for (let row = 0; row < size; row++) {
     for (let col = 0; col < size; col++) {
-      const index = row * size + col;
-      const weight = weights[index];
-
+      const weight = matrix ? (matrix[row] ? (matrix[row][col] || 0) : 0) : 0;
       gridSquares.push(
         <div
-          key={index}
+          key={`${row}-${col}`}
           className={`square bg-gray-300 border border-gray-400 flex items-center justify-center text-lg font-bold`}
-          style={{ width: `${100 / size}%`, paddingBottom: `${100 / size}%` }}
+          style={squareStyle}
           onClick={() => handleSquareClick(row + 1, col + 1)}
         >
           {weight}
