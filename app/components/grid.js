@@ -63,7 +63,6 @@ const Grid = ({ onWeightChange }) => {
 
   const gridSquares = [];
   const squareStyle = {
-    width: `${cellSize}px`,
     height: `${cellSize}px`,
     fontSize: `${cellSize / 3}px`,
     backgroundColor: 'rgba(255, 255, 255, 0.5)', // tornando os quadrados semi-transparentes
@@ -85,10 +84,7 @@ const Grid = ({ onWeightChange }) => {
   }
 
   return (
-    <div className="grid-container" style={{ backgroundImage: 'url("assets/floor1.png")', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
-      <div className="grid" style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}>
-        {gridSquares}
-      </div>
+    <>
       <div className="slider-container flex items-center">
         <label htmlFor="slider" className="mr-2">Tamanho da matriz:</label>
         <input
@@ -103,8 +99,13 @@ const Grid = ({ onWeightChange }) => {
         />
         <span className="ml-2">{size}x{size}</span>
       </div>
+      <div className="grid-container" style={{ backgroundImage: 'url("assets/floor1.png")', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
+        <div className="grid" style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}>
+          {gridSquares}
+        </div>
+      </div>
       <button onClick={handleSaveChanges} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Salvar Alterações</button>
-    </div>
+    </>
   );
 };
 
