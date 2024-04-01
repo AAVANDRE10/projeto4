@@ -65,7 +65,8 @@ const Grid = ({ onWeightChange }) => {
   const squareStyle = {
     width: `${cellSize}px`,
     height: `${cellSize}px`,
-    fontSize: `${cellSize / 3}px`
+    fontSize: `${cellSize / 3}px`,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)', // tornando os quadrados semi-transparentes
   };
   for (let row = 0; row < size; row++) {
     for (let col = 0; col < size; col++) {
@@ -84,7 +85,7 @@ const Grid = ({ onWeightChange }) => {
   }
 
   return (
-    <div className="grid-container">
+    <div className="grid-container" style={{ backgroundImage: 'url("assets/floor1.png")', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
       <div className="grid" style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}>
         {gridSquares}
       </div>
