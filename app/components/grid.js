@@ -9,6 +9,7 @@ const Grid = ({ onWeightChange }) => {
   const [cellSize, setCellSize] = useState(0);
   const [matrix, setMatrix] = useState(generateMatrix(initialWeights, initialSize));
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [backgroundPosition, setBackgroundPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     function calculateCellSize() {
@@ -45,20 +46,29 @@ const Grid = ({ onWeightChange }) => {
     setWeights(Array(newSize * newSize).fill(0));
   };
 
-  const handleZoomIn = () => {
-    setZoomLevel(prevZoom => prevZoom + 0.1);
-    setSize(prevSize => prevSize + 1); // Aumentar o tamanho da matriz ao fazer zoom in
-  };
-
-  const handleZoomOut = () => {
-    if (size > 1) {
-      setZoomLevel(prevZoom => Math.max(prevZoom - 0.10, 0.10));
-      setSize(prevSize => prevSize - 1); // Reduzir o tamanho da matriz ao fazer zoom out, desde que não seja menor que 1
+  const handleZoom = (direction) => {
+    if (direction === 'in') {
+      setZoomLevel(prevZoom => prevZoom + 0.1);
+	    setSize(prevSize => prevSize + 1);
+    } else {
+      if (size > 1) {
+        setZoomLevel(prevZoom => Math.max(prevZoom - 0.1, 0.1));
+        setSize(prevSize => Math.max(prevSize - 1, 1));
+      }
     }
   };
 
   const handleSaveChanges = () => {
     console.log("Matriz de pesos:", matrix);
+  };
+
+  const handleBackgroundClick = (event) => {
+    const boundingRect = event.currentTarget.getBoundingClientRect();
+    const offsetX = event.clientX - boundingRect.left;
+    const offsetY = event.clientY - boundingRect.top;
+    const x = (offsetX / boundingRect.width) * 100;
+    const y = (offsetY / boundingRect.height) * 100;
+    setBackgroundPosition({ x, y });
   };
 
   function generateMatrix(weights, size) {
@@ -99,7 +109,7 @@ const Grid = ({ onWeightChange }) => {
   const backgroundImageStyle = {
     backgroundImage: 'url("assets/floor1.png")',
     backgroundSize: `${100 * zoomLevel}%`, // Aplique o zoom na imagem de fundo
-    backgroundPosition: 'center',
+    backgroundPosition: `${backgroundPosition.x}% ${backgroundPosition.y}%`, // Ajuste a posição da imagem de fundo
     backgroundRepeat: 'no-repeat'
   };
 
@@ -107,10 +117,10 @@ const Grid = ({ onWeightChange }) => {
     <>
       <span className="ml-2">{size}x{size}</span>
       <div className="zoom-controls">
-        <button onClick={handleZoomIn}>Zoom In</button>
-        <button onClick={handleZoomOut}>Zoom Out</button>
+        <button onClick={() => handleZoom('in')}>Zoom In</button>
+        <button onClick={() => handleZoom('out')}>Zoom Out</button>
       </div>
-      <div className="grid-container" style={backgroundImageStyle}>
+      <div className="grid-container" style={backgroundImageStyle} onClick={handleBackgroundClick}>
         <div className="grid" style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}>
           {gridSquares}
         </div>
