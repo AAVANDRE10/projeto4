@@ -10,6 +10,7 @@ const Grid = ({ onWeightChange }) => {
   const [matrix, setMatrix] = useState(generateMatrix(initialWeights, initialSize));
   const [zoomLevel, setZoomLevel] = useState(1);
   const [backgroundPosition, setBackgroundPosition] = useState({ x: 0, y: 0 });
+  const [matrixActive, setMatrixActive] = useState(true); // Estado para controlar se a matriz está ativa ou não
 
   useEffect(() => {
     function calculateCellSize() {
@@ -30,6 +31,7 @@ const Grid = ({ onWeightChange }) => {
   }, [weights, size]);
 
   const handleSquareClick = (row, col) => {
+    if (!matrixActive) return; // Verificar se a matriz está ativa antes de permitir a modificação
     const index = (row - 1) * size + (col - 1);
     const newWeights = [...weights];
     const currentWeight = newWeights[index];
@@ -49,13 +51,17 @@ const Grid = ({ onWeightChange }) => {
   const handleZoom = (direction) => {
     if (direction === 'in') {
       setZoomLevel(prevZoom => prevZoom + 0.1);
-	    setSize(prevSize => prevSize + 1);
+      setSize(prevSize => prevSize + 1);
     } else {
       if (size > 1) {
         setZoomLevel(prevZoom => Math.max(prevZoom - 0.1, 0.1));
         setSize(prevSize => Math.max(prevSize - 1, 1));
       }
     }
+  };
+
+  const handleToggleMatrix = () => {
+    setMatrixActive(prevActive => !prevActive); // Inverte o estado da matriz
   };
 
   const handleSaveChanges = () => {
@@ -126,6 +132,9 @@ const Grid = ({ onWeightChange }) => {
         </div>
       </div>
       <button onClick={handleSaveChanges} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Salvar Alterações</button>
+      <button onClick={handleToggleMatrix} className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+        {matrixActive ? 'Desativar Matriz' : 'Ativar Matriz'}
+      </button>
     </>
   );
 };
