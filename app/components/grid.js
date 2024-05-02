@@ -1,21 +1,24 @@
-'use client'
 import React, { useState, useEffect } from 'react';
 
-const Grid = ({ onWeightChange }) => {
-  const initialSize = 10;
-  const initialWeights = Array(initialSize * initialSize).fill(0);
-  const [weights, setWeights] = useState(initialWeights);
-  const [size, setSize] = useState(initialSize);
+const Grid = ({ scale }) => {
+  const sizes = {
+    pequeno: 25,
+    médio: 50,
+    grande: 100
+  };
+
+  const [weights, setWeights] = useState(Array(10000).fill(0));
+  const [size, setSize] = useState(100);
   const [cellSize, setCellSize] = useState(0);
-  const [matrix, setMatrix] = useState(generateMatrix(initialWeights, initialSize));
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const [backgroundPosition, setBackgroundPosition] = useState({ x: 0, y: 0 });
-  const [matrixActive, setMatrixActive] = useState(true); // Estado para controlar se a matriz está ativa ou não
+  const [matrix, setMatrix] = useState(generateMatrix(Array(10000).fill(0), 100));
+  const [matrixActive, setMatrixActive] = useState(false);
+  const [zoomOrigin, setZoomOrigin] = useState({ x: 0, y: 0 });
+  const [selectedSize, setSelectedSize] = useState('médio');
 
   useEffect(() => {
     function calculateCellSize() {
       const windowWidth = window.innerWidth;
-      const resolution = 0.4; // Porcentagem da resolução desejada
+      const resolution = 0.4;
       const calculatedCellSize = Math.min(windowWidth * resolution / size, 100);
       setCellSize(calculatedCellSize);
     }
@@ -31,50 +34,27 @@ const Grid = ({ onWeightChange }) => {
   }, [weights, size]);
 
   const handleSquareClick = (row, col) => {
-    if (!matrixActive) return; // Verificar se a matriz está ativa antes de permitir a modificação
-    const index = (row - 1) * size + (col - 1);
+    if (!matrixActive) return;
+    const index = row * size + col;
     const newWeights = [...weights];
     const currentWeight = newWeights[index];
     newWeights[index] = currentWeight < 5 ? currentWeight + 1 : 1;
     setWeights(newWeights);
-    if (typeof onWeightChange === 'function') {
-      onWeightChange(`(${row}, ${col})`, newWeights[index]);
-    }
-  };
-
-  const handleSliderChange = (event) => {
-    const newSize = parseInt(event.target.value);
-    setSize(newSize);
-    setWeights(Array(newSize * newSize).fill(0));
-  };
-
-  const handleZoom = (direction) => {
-    if (direction === 'in') {
-      setZoomLevel(prevZoom => prevZoom + 0.1);
-      setSize(prevSize => prevSize + 1);
-    } else {
-      if (size > 1) {
-        setZoomLevel(prevZoom => Math.max(prevZoom - 0.1, 0.1));
-        setSize(prevSize => Math.max(prevSize - 1, 1));
-      }
-    }
+    setZoomOrigin({ x: col, y: row });
   };
 
   const handleToggleMatrix = () => {
-    setMatrixActive(prevActive => !prevActive); // Inverte o estado da matriz
+    setMatrixActive(prevActive => !prevActive);
   };
 
   const handleSaveChanges = () => {
     console.log("Matriz de pesos:", matrix);
   };
 
-  const handleBackgroundClick = (event) => {
-    const boundingRect = event.currentTarget.getBoundingClientRect();
-    const offsetX = event.clientX - boundingRect.left;
-    const offsetY = event.clientY - boundingRect.top;
-    const x = (offsetX / boundingRect.width) * 100;
-    const y = (offsetY / boundingRect.height) * 100;
-    setBackgroundPosition({ x, y });
+  const handleSizeChange = (event) => {
+    const newSize = sizes[event.target.value];
+    setSize(newSize);
+    setSelectedSize(event.target.value);
   };
 
   function generateMatrix(weights, size) {
@@ -94,7 +74,7 @@ const Grid = ({ onWeightChange }) => {
   const squareStyle = {
     height: `${cellSize}px`,
     fontSize: `${cellSize / 3}px`,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)', // tornando os quadrados semi-transparentes
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
   };
   for (let row = 0; row < size; row++) {
     for (let col = 0; col < size; col++) {
@@ -104,7 +84,7 @@ const Grid = ({ onWeightChange }) => {
           key={`${row}-${col}`}
           className={`square bg-gray-300 border border-gray-400 flex items-center justify-center text-lg font-bold`}
           style={squareStyle}
-          onClick={() => handleSquareClick(row + 1, col + 1)}
+          onClick={() => handleSquareClick(row, col)}
         >
           {weight}
         </div>
@@ -112,21 +92,31 @@ const Grid = ({ onWeightChange }) => {
     }
   }
 
+  const gridContainerStyle = {
+    transform: `scale(${scale})`,
+    transformOrigin: `${zoomOrigin.x * cellSize}px ${zoomOrigin.y * cellSize}px`,
+  };
+
   const backgroundImageStyle = {
     backgroundImage: 'url("assets/floor1.png")',
-    backgroundSize: `${100 * zoomLevel}%`, // Aplique o zoom na imagem de fundo
-    backgroundPosition: `${backgroundPosition.x}% ${backgroundPosition.y}%`, // Ajuste a posição da imagem de fundo
+    backgroundSize: `100%`,
     backgroundRepeat: 'no-repeat'
   };
 
   return (
     <>
-      <span className="ml-2">{size}x{size}</span>
-      <div className="zoom-controls">
-        <button onClick={() => handleZoom('in')}>Zoom In</button>
-        <button onClick={() => handleZoom('out')}>Zoom Out</button>
-      </div>
-      <div className="grid-container" style={backgroundImageStyle} onClick={handleBackgroundClick}>
+      <label>
+        Escolha o tamanho da matriz:
+        <select value={selectedSize} onChange={handleSizeChange}>
+          {Object.entries(sizes).map(([key, value]) => (
+            <option key={key} value={key}>
+              {key}
+            </option>
+          ))}
+        </select>
+      </label>
+      <span className="ml-2">{size}x{size}</span> 
+      <div className="grid-container" style={{ ...gridContainerStyle, ...backgroundImageStyle }}>
         <div className="grid" style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}>
           {gridSquares}
         </div>
