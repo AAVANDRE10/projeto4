@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 
 const Grid = ({ scale }) => {
   const sizes = {
-    pequeno: 25,
+    pequeno: 5,
     médio: 50,
     grande: 100
   };
+
+  const [startPoint, setStartPoint] = useState(null);
+  const [endPoint, setEndPoint] = useState(null);
 
   const [weights, setWeights] = useState(Array(10000).fill(0));
   const [size, setSize] = useState(100);
@@ -35,6 +38,13 @@ const Grid = ({ scale }) => {
 
   const handleSquareClick = (row, col) => {
     if (!matrixActive) return;
+
+    if (!startPoint) {
+      setStartPoint([row, col]);
+    } else {
+      setEndPoint([row, col]);
+    }
+
     const index = row * size + col;
     const newWeights = [...weights];
     const currentWeight = newWeights[index];
@@ -49,6 +59,14 @@ const Grid = ({ scale }) => {
 
   const handleSaveChanges = () => {
     console.log("Matriz de pesos:", matrix);
+    console.log(startPoint);
+    console.log(endPoint);
+
+    if (startPoint && endPoint) {
+      teste(matrix, startPoint, endPoint);
+    } else {
+      console.error("Ponto inicial ou final não definido!");
+    }
   };
 
   const handleSizeChange = (event) => {
@@ -130,3 +148,74 @@ const Grid = ({ scale }) => {
 };
 
 export default Grid;
+
+let caminho = [];
+
+function teste(matriz, start, end) {
+    let caminhos;
+    let resultado;
+    let pontos = [];
+    let path = [];
+    let dist;
+    let dist_end;
+
+    let calcularCaminho = () => {
+        let iStart = start[0] * matriz.length + start[1];
+        let iEnd = end[0] * matriz.length + end[1];
+
+        let distances = [];
+        let priorities = [];
+        let visited = [];
+        caminhos = Array(matriz.length).fill('');
+
+        for (let i = 0; i < matriz.length; i++) distances[i] = Number.MAX_VALUE;
+        distances[iStart] = 0;
+
+        for (let i = 0; i < matriz.length; i++) priorities[i] = Number.MAX_VALUE;
+        priorities[iStart] = 1;
+
+        while (true) {
+            let lowestPriority = Number.MAX_VALUE;
+            let lowestPriorityIndex = -1;
+
+            for (let i = 0; i < priorities.length; i++) {
+                if (priorities[i] < lowestPriority && !visited[i]) {
+                    lowestPriority = priorities[i];
+                    lowestPriorityIndex = i;
+                }
+            }
+
+            if (lowestPriorityIndex === -1) {
+                return -1;
+            } else if (lowestPriorityIndex === iEnd) {
+                resultado = caminhos[lowestPriorityIndex].split(",");
+
+                for (let i = 0; i < resultado.length; i++) {
+                    pontos.push(valores[resultado[i]]);
+                }
+
+                //criarPolyline(pontos);
+                console.log(pontos);
+                return distances[lowestPriorityIndex];
+            }
+
+            for (let i = 0; i < matriz[lowestPriorityIndex].length; i++) {
+                if (matriz[lowestPriorityIndex][i] !== 0 && !visited[i]) {
+                    if (distances[lowestPriorityIndex] + matriz[lowestPriorityIndex][i] < distances[i]) {
+                        if (caminhos[lowestPriorityIndex] === "") {
+                            caminhos[i] = lowestPriorityIndex + "," + i;
+                        } else {
+                            caminhos[i] = caminhos[lowestPriorityIndex] + "," + i;
+                        }
+
+                        distances[i] = distances[lowestPriorityIndex] + matriz[lowestPriorityIndex][i];
+                        priorities[i] = distances[i] + 1;
+                    }
+                }
+            }
+            visited[lowestPriorityIndex] = true;
+        }
+    };
+
+    calcularCaminho();
+}
