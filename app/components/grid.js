@@ -63,7 +63,9 @@ const Grid = ({ scale }) => {
     console.log(endPoint);
 
     if (startPoint && endPoint) {
-      teste(matrix, startPoint, endPoint);
+      const caminhoEncontrado = teste(matrix, startPoint, endPoint);
+      console.log("Caminho encontrado:", caminhoEncontrado);
+      // Faça o que você quiser com o caminho encontrado, como exibí-lo na interface do usuário ou processá-lo de outra forma.
     } else {
       console.error("Ponto inicial ou final não definido!");
     }
@@ -195,7 +197,6 @@ function teste(matriz, start, end) {
                 }
 
                 //criarPolyline(pontos);
-                console.log(pontos);
                 return distances[lowestPriorityIndex];
             }
 
@@ -217,5 +218,13 @@ function teste(matriz, start, end) {
         }
     };
 
-    calcularCaminho();
+    const distancia = calcularCaminho();
+    console.log(distancia);
+    console.log(pontos);
+    if (distancia === -1) {
+        console.error("Não foi possível encontrar um caminho.");
+        return []; // Retorna um array vazio indicando que não foi encontrado nenhum caminho
+    }
+
+    return pontos;
 }
