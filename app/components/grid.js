@@ -3,13 +3,12 @@ import React, { useState, useEffect } from 'react';
 const Grid = ({ scale }) => {
   const sizes = {
     pequeno: 5,
-    médio: 50,
+    medio: 50,
     grande: 100
   };
 
   const [startPoint, setStartPoint] = useState(null);
   const [endPoint, setEndPoint] = useState(null);
-
   const [weights, setWeights] = useState(Array(10000).fill(0));
   const [size, setSize] = useState(100);
   const [cellSize, setCellSize] = useState(0);
@@ -17,6 +16,8 @@ const Grid = ({ scale }) => {
   const [matrixActive, setMatrixActive] = useState(false);
   const [zoomOrigin, setZoomOrigin] = useState({ x: 0, y: 0 });
   const [selectedSize, setSelectedSize] = useState('médio');
+  const [path, setPath] = useState([]); // Estado para armazenar o caminho
+  const [selectedCells, setSelectedCells] = useState([]); // Estado para armazenar células selecionadas
 
   useEffect(() => {
     function calculateCellSize() {
@@ -38,6 +39,9 @@ const Grid = ({ scale }) => {
 
   const handleSquareClick = (row, col) => {
     if (!matrixActive) return;
+
+    const newSelectedCells = [...selectedCells, [row, col]];
+    setSelectedCells(newSelectedCells);
 
     if (!startPoint) {
       setStartPoint([row, col]);
@@ -65,7 +69,7 @@ const Grid = ({ scale }) => {
     if (startPoint && endPoint) {
       const caminhoEncontrado = teste(matrix, startPoint, endPoint);
       console.log("Caminho encontrado:", caminhoEncontrado);
-      // Faça o que você quiser com o caminho encontrado, como exibí-lo na interface do usuário ou processá-lo de outra forma.
+      setPath(caminhoEncontrado); // Atualiza o estado do caminho
     } else {
       console.error("Ponto inicial ou final não definido!");
     }
@@ -90,15 +94,25 @@ const Grid = ({ scale }) => {
     return newMatrix;
   }
 
-  const gridSquares = [];
-  const squareStyle = {
-    height: `${cellSize}px`,
-    fontSize: `${cellSize / 3}px`,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  const isPath = (row, col) => {
+    return path.some(([pathRow, pathCol]) => pathRow === row && pathCol === col);
   };
+
+  const isSelected = (row, col) => {
+    return selectedCells.some(([selectedRow, selectedCol]) => selectedRow === row && selectedCol === col);
+  };
+
+  const gridSquares = [];
   for (let row = 0; row < size; row++) {
     for (let col = 0; col < size; col++) {
       const weight = matrix ? (matrix[row] ? (matrix[row][col] || 0) : 0) : 0;
+      const isPathCell = isPath(row, col);
+      const isSelectedCell = isSelected(row, col);
+      const squareStyle = {
+        height: `${cellSize}px`,
+        fontSize: `${cellSize / 3}px`,
+        backgroundColor: isSelectedCell || isPathCell ? 'rgba(0, 0, 255, 0.5)' : 'rgba(255, 255, 255, 0.5)',
+      };
       gridSquares.push(
         <div
           key={`${row}-${col}`}
