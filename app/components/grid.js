@@ -10,14 +10,13 @@ const Grid = ({ scale }) => {
   const [startPoint, setStartPoint] = useState(null);
   const [endPoint, setEndPoint] = useState(null);
   const [weights, setWeights] = useState(Array(10000).fill(0));
-  const [size, setSize] = useState(100);
+  const [size, setSize] = useState(50);
   const [cellSize, setCellSize] = useState(0);
-  const [matrix, setMatrix] = useState(generateMatrix(Array(10000).fill(0), 100));
+  const [matrix, setMatrix] = useState(generateMatrix(Array(10000).fill(0), 50));
   const [matrixActive, setMatrixActive] = useState(false);
   const [zoomOrigin, setZoomOrigin] = useState({ x: 0, y: 0 });
-  const [selectedSize, setSelectedSize] = useState('médio');
-  const [path, setPath] = useState([]); // Estado para armazenar o caminho
-  const [selectedCells, setSelectedCells] = useState([]); // Estado para armazenar células selecionadas
+  const [selectedSize, setSelectedSize] = useState('medio');
+  const [path, setPath] = useState([]);
 
   useEffect(() => {
     function calculateCellSize() {
@@ -39,9 +38,6 @@ const Grid = ({ scale }) => {
 
   const handleSquareClick = (row, col) => {
     if (!matrixActive) return;
-
-    const newSelectedCells = [...selectedCells, [row, col]];
-    setSelectedCells(newSelectedCells);
 
     if (!startPoint) {
       setStartPoint([row, col]);
@@ -67,9 +63,9 @@ const Grid = ({ scale }) => {
     console.log(endPoint);
 
     if (startPoint && endPoint) {
-      const caminhoEncontrado = teste(matrix, startPoint, endPoint);
+      const caminhoEncontrado = findShortestPath(matrix, startPoint, endPoint);
       console.log("Caminho encontrado:", caminhoEncontrado);
-      setPath(caminhoEncontrado); // Atualiza o estado do caminho
+      setPath(caminhoEncontrado);
     } else {
       console.error("Ponto inicial ou final não definido!");
     }
@@ -98,20 +94,15 @@ const Grid = ({ scale }) => {
     return path.some(([pathRow, pathCol]) => pathRow === row && pathCol === col);
   };
 
-  const isSelected = (row, col) => {
-    return selectedCells.some(([selectedRow, selectedCol]) => selectedRow === row && selectedCol === col);
-  };
-
   const gridSquares = [];
   for (let row = 0; row < size; row++) {
     for (let col = 0; col < size; col++) {
       const weight = matrix ? (matrix[row] ? (matrix[row][col] || 0) : 0) : 0;
       const isPathCell = isPath(row, col);
-      const isSelectedCell = isSelected(row, col);
       const squareStyle = {
         height: `${cellSize}px`,
         fontSize: `${cellSize / 3}px`,
-        backgroundColor: isSelectedCell || isPathCell ? 'rgba(0, 0, 255, 0.5)' : 'rgba(255, 255, 255, 0.5)',
+        backgroundColor: isPathCell ? 'rgba(0, 0, 255, 0.5)' : 'rgba(255, 255, 255, 0.5)',
       };
       gridSquares.push(
         <div
@@ -165,80 +156,60 @@ const Grid = ({ scale }) => {
 
 export default Grid;
 
-let caminho = [];
+function findShortestPath(matrix, start, end) {
+  const n = matrix.length;
+  const distances = Array.from({ length: n }, () => Array(n).fill(Number.MAX_SAFE_INTEGER));
+  distances[start[0]][start[1]] = matrix[start[0]][start[1]];
 
-function teste(matriz, start, end) {
-    let caminhos;
-    let resultado;
-    let pontos = [];
-    let path = [];
-    let dist;
-    let dist_end;
+  const previous = Array.from({ length: n }, () => Array(n).fill(null));
+  const visited = Array.from({ length: n }, () => Array(n).fill(false));
+  const queue = [[start[0], start[1]]];
 
-    let calcularCaminho = () => {
-        let iStart = start[0] * matriz.length + start[1];
-        let iEnd = end[0] * matriz.length + end[1];
+  while (queue.length !== 0) {
+    const [x, y] = queue.shift();
+    visited[x][y] = true;
 
-        let distances = [];
-        let priorities = [];
-        let visited = [];
-        caminhos = Array(matriz.length).fill('');
-
-        for (let i = 0; i < matriz.length; i++) distances[i] = Number.MAX_VALUE;
-        distances[iStart] = 0;
-
-        for (let i = 0; i < matriz.length; i++) priorities[i] = Number.MAX_VALUE;
-        priorities[iStart] = 1;
-
-        while (true) {
-            let lowestPriority = Number.MAX_VALUE;
-            let lowestPriorityIndex = -1;
-
-            for (let i = 0; i < priorities.length; i++) {
-                if (priorities[i] < lowestPriority && !visited[i]) {
-                    lowestPriority = priorities[i];
-                    lowestPriorityIndex = i;
-                }
-            }
-
-            if (lowestPriorityIndex === -1) {
-                return -1;
-            } else if (lowestPriorityIndex === iEnd) {
-                resultado = caminhos[lowestPriorityIndex].split(",");
-
-                for (let i = 0; i < resultado.length; i++) {
-                    pontos.push(valores[resultado[i]]);
-                }
-
-                //criarPolyline(pontos);
-                return distances[lowestPriorityIndex];
-            }
-
-            for (let i = 0; i < matriz[lowestPriorityIndex].length; i++) {
-                if (matriz[lowestPriorityIndex][i] !== 0 && !visited[i]) {
-                    if (distances[lowestPriorityIndex] + matriz[lowestPriorityIndex][i] < distances[i]) {
-                        if (caminhos[lowestPriorityIndex] === "") {
-                            caminhos[i] = lowestPriorityIndex + "," + i;
-                        } else {
-                            caminhos[i] = caminhos[lowestPriorityIndex] + "," + i;
-                        }
-
-                        distances[i] = distances[lowestPriorityIndex] + matriz[lowestPriorityIndex][i];
-                        priorities[i] = distances[i] + 1;
-                    }
-                }
-            }
-            visited[lowestPriorityIndex] = true;
-        }
-    };
-
-    const distancia = calcularCaminho();
-    console.log(distancia);
-    console.log(pontos);
-    if (distancia === -1) {
-        console.error("Não foi possível encontrar um caminho.");
-        return []; // Retorna um array vazio indicando que não foi encontrado nenhum caminho
+    const neighbors = getNeighbors(x, y, matrix);
+    for (const [nx, ny] of neighbors) {
+      const newDistance = distances[x][y] + matrix[nx][ny];
+      if (newDistance < distances[nx][ny]) {
+        distances[nx][ny] = newDistance;
+        previous[nx][ny] = [x, y];
+        queue.push([nx, ny]);
+      }
     }
+  }
 
-    return pontos;
+  const shortestPath = [];
+  let current = [end[0], end[1]];
+  while (current[0] !== start[0] || current[1] !== start[1]) {
+    shortestPath.push(current);
+    current = previous[current[0]][current[1]];
+  }
+  shortestPath.push([start[0], start[1]]);
+  shortestPath.reverse();
+
+  if (distances[end[0]][end[1]] === Number.MAX_SAFE_INTEGER) {
+    console.error("Não foi possível encontrar um caminho.");
+    return [];
+  }
+
+  console.log("Peso total do caminho final:", distances[end[0]][end[1]]);
+  console.log("Caminho mais curto, coordenadas:", shortestPath);
+  return shortestPath;
+}
+
+function getNeighbors(x, y, matrix) {
+  const neighbors = [];
+  const directions = [[-1, 0], [0, -1], [1, 0], [0, 1]]; // cima, esquerda, baixo, direita
+
+  for (const [dx, dy] of directions) {
+    const nx = x + dx;
+    const ny = y + dy;
+    if (nx >= 0 && nx < matrix.length && ny >= 0 && ny < matrix[0].length && matrix[nx][ny] > 0) {
+      neighbors.push([nx, ny]);
+    }
+  }
+
+  return neighbors;
 }
