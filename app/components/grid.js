@@ -17,6 +17,7 @@ const Grid = ({ scale }) => {
   const [zoomOrigin, setZoomOrigin] = useState({ x: 0, y: 0 });
   const [selectedSize, setSelectedSize] = useState('medio');
   const [path, setPath] = useState([]);
+  const [phase, setPhase] = useState(1);
 
   useEffect(() => {
     function calculateCellSize() {
@@ -39,36 +40,47 @@ const Grid = ({ scale }) => {
   const handleSquareClick = (row, col) => {
     if (!matrixActive) return;
 
-    if (!startPoint) {
-      setStartPoint([row, col]);
-    } else {
-      setEndPoint([row, col]);
+    if (phase === 1) {
+      const index = row * size + col;
+      const newWeights = [...weights];
+      const currentWeight = newWeights[index];
+      newWeights[index] = currentWeight < 5 ? currentWeight + 1 : 1;
+      setWeights(newWeights);
+      setZoomOrigin({ x: col, y: row });
+    } else if (phase === 2) {
+      if (!startPoint) {
+        setStartPoint([row, col]);
+      } else {
+        setEndPoint([row, col]);
+      }
     }
-
-    const index = row * size + col;
-    const newWeights = [...weights];
-    const currentWeight = newWeights[index];
-    newWeights[index] = currentWeight < 5 ? currentWeight + 1 : 1;
-    setWeights(newWeights);
-    setZoomOrigin({ x: col, y: row });
   };
 
   const handleToggleMatrix = () => {
     setMatrixActive(prevActive => !prevActive);
   };
 
-  const handleSaveChanges = () => {
-    console.log("Matriz de pesos:", matrix);
-    console.log(startPoint);
-    console.log(endPoint);
-
-    if (startPoint && endPoint) {
-      const caminhoEncontrado = findShortestPath(matrix, startPoint, endPoint);
-      console.log("Caminho encontrado:", caminhoEncontrado);
-      setPath(caminhoEncontrado);
-    } else {
-      console.error("Ponto inicial ou final não definido!");
+  const handleNextPhase = () => {
+    if (phase === 1) {
+      console.log("Pesos salvos:", matrix);
+    } else if (phase === 2) {
+      if (!startPoint || !endPoint) {
+        console.error("Ponto inicial ou final não definido!");
+        return;
+      } else {
+        console.log("Pontos definidos:", startPoint, endPoint);
+      }
+    } else if (phase === 3) {
+      if (startPoint && endPoint) {
+        const caminhoEncontrado = findShortestPath(matrix, startPoint, endPoint);
+        console.log("Caminho encontrado:", caminhoEncontrado);
+        setPath(caminhoEncontrado);
+      } else {
+        console.error("Defina os pontos inicial e final antes de prosseguir!");
+        return;
+      }
     }
+    setPhase(prevPhase => Math.min(prevPhase + 1, 3));
   };
 
   const handleSizeChange = (event) => {
@@ -94,15 +106,23 @@ const Grid = ({ scale }) => {
     return path.some(([pathRow, pathCol]) => pathRow === row && pathCol === col);
   };
 
+  const isStartOrEndPoint = (row, col) => {
+    return (startPoint && startPoint[0] === row && startPoint[1] === col) ||
+           (endPoint && endPoint[0] === row && endPoint[1] === col);
+  };
+
   const gridSquares = [];
   for (let row = 0; row < size; row++) {
     for (let col = 0; col < size; col++) {
       const weight = matrix ? (matrix[row] ? (matrix[row][col] || 0) : 0) : 0;
       const isPathCell = isPath(row, col);
+      const isStartOrEndCell = isStartOrEndPoint(row, col);
       const squareStyle = {
         height: `${cellSize}px`,
         fontSize: `${cellSize / 3}px`,
-        backgroundColor: isPathCell ? 'rgba(0, 0, 255, 0.5)' : 'rgba(255, 255, 255, 0.5)',
+        backgroundColor: isPathCell ? 'rgba(0, 0, 255, 0.5)' :
+                          isStartOrEndCell ? 'rgba(0, 255, 0, 0.5)' :
+                          'rgba(255, 255, 255, 0.5)',
       };
       gridSquares.push(
         <div
@@ -140,13 +160,21 @@ const Grid = ({ scale }) => {
           ))}
         </select>
       </label>
-      <span className="ml-2">{size}x{size}</span> 
+      <span className="ml-2">{size}x{size}</span>
       <div className="grid-container" style={{ ...gridContainerStyle, ...backgroundImageStyle }}>
         <div className="grid" style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}>
           {gridSquares}
         </div>
       </div>
-      <button onClick={handleSaveChanges} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Salvar Alterações</button>
+      {phase >= 2 && (
+        <div className="mt-4">
+          <p>Start Point: {startPoint ? `(${startPoint[0]}, ${startPoint[1]})` : 'Not defined'}</p>
+          <p>End Point: {endPoint ? `(${endPoint[0]}, ${endPoint[1]})` : 'Not defined'}</p>
+        </div>
+      )}
+      <button onClick={handleNextPhase} className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+        {phase < 3 ? `Próxima Fase (${phase}/3)` : 'Executar Algoritmo'}
+      </button>
       <button onClick={handleToggleMatrix} className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
         {matrixActive ? 'Desativar Matriz' : 'Ativar Matriz'}
       </button>
