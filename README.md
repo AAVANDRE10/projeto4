@@ -1,6 +1,6 @@
 ## Visão Geral
 
-O projeto utiliza o framework Next.js para criar uma aplicação web. Next.js oferece renderização híbrida, suporte a rotas dinâmicas e estáticas, e uma excelente experiência de desenvolvimento.
+O projeto utiliza a framework Next.js para criar uma aplicação web. Next.js oferece suporte a rotas dinâmicas e estáticas, e uma excelente experiência de desenvolvimento.
 
 ## Tecnologias Utilizadas
 
